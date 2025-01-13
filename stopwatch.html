@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Focus</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script> <!-- Include jsPDF -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@0.4.1/dist/html2canvas.min.js"></script> <!-- Include html2canvas -->
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            padding: 20px;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+            text-align: center;
+            display: block;
+            justify-content: center;
+            align-items: center;
+            height: auto; /* Allow the page to scroll based on content */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 1200px;
+            margin: auto;
+            height: auto;
+        }
+
+        #timer {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+
+        .wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-auto-rows: 100px;
+            gap: 20px;
+            flex: 1 1 auto;
+            margin: 20px;
+            width: 100%;
+        }
+
+        .item {
+			grid-column: span 2;
+            background: #ff6f61;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+				
+			/* Dealing with 2 orphan items */
+			&:last-child:nth-child(3n - 1) {
+				grid-column-end: -2;
+			}
+			
+			&:nth-last-child(2):nth-child(3n + 1) {
+				grid-column-end: 4;
+			}
+
+			/* Dealing with single orphan */
+			&:last-child:nth-child(3n - 2) {
+				grid-column-end: 5;
+			}
+		}
+
+        .item:hover {
+            background: #ff3d2e;
+        }
+
+        #scrollButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #ff3d2e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s ease;
+        }
+
+        #scrollButton:hover {
+            background-color: #ff1f0f;
+        }
+
+        #hiddenSection {
+            display: block;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            height: auto; /* Let the height adjust based on content */
+            background-color: #fef3c0;
+            padding: 50px;
+            text-align: center;
+            margin-top: 30vh;
+        }
+
+        /* Pie chart styling */
+        #pieChart {
+            max-width: 500px;
+            margin: 40px auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Statistics styling */
+        #statistics {
+            text-align: center;
+            color: #000;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #statistics h3 {
+            margin-top: 0;
+            color: #ff6f61;
+        }
+
+        #statistics ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #statistics li {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+
+        #pdfButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s ease;
+        }
+
+        #pdfButton:hover {
+            background-color: #388e3c;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Group Focus</h1>
+        <div id="timer">00:00</div>
+        <div id="userNames" class="wrapper">
+            <div class="grid"></div>
+        </div>
+        <button id="scrollButton">Show More</button>
+    </div>
+
+    <div id="hiddenSection">
+        <h2>Statistics and Pie Chart</h2>
+        <canvas id="pieChart"></canvas>
+        <div id="statistics"></div>
+        <button id="pdfButton">Download PDF Report</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Reveal the hidden section by changing its display and opacity
+        function revealHiddenSection() {
+            const hiddenSection = document.getElementById('hiddenSection');
+            hiddenSection.style.display = 'block'; // Make the section visible
+            setTimeout(() => {
+                hiddenSection.style.opacity = 1; // Transition opacity to make it appear smoothly
+                // Generate statistics and chart after the section is revealed
+            }, 50);
+        }
+    
+        // Handle button click to scroll to the hidden section
+        document.getElementById('scrollButton').addEventListener('click', () => {
+            revealHiddenSection();
+            document.getElementById('hiddenSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        let hasScrolled = false; // Flag to track if the function has been triggered
+
+        // Handle scroll event to reveal the hidden section
+        window.addEventListener('scroll', () => {
+            const hiddenSection = document.getElementById('hiddenSection');
+            const rect = hiddenSection.getBoundingClientRect();
+            const viewHeight = window.innerHeight || document.documentElement.clientHeight;
+
+            // Check if the hidden section is in the viewport
+            if (rect.top < viewHeight && rect.bottom >= 0) {
+                revealHiddenSection();
+            }
+
+            // Call generateStatistics only the first time the scroll event is triggered
+            if (!hasScrolled) {
+                    generateStatistics();
+                    hasScrolled = true; // Set the flag to true after calling generateStatistics
+            }
+        });
+
+    
+        // Function to generate statistics and pie chart
+        function generateStatistics() {
+            let storedData = JSON.parse(sessionStorage.getItem('userData')) || [];
+            if (storedData.length === 0) return;
+
+            const userStats = {};
+
+            // Calculate statistics
+            storedData.forEach(item => {
+                const { name, time } = item;
+                const timeArray = time.split(':');
+                const timeInSeconds = parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
+
+                if (!userStats[name]) {
+                    userStats[name] = { count: 0, min: timeInSeconds, max: timeInSeconds, total: 0 };
+                }
+
+                userStats[name].count++;
+                userStats[name].total += timeInSeconds;
+                if (timeInSeconds < userStats[name].min) userStats[name].min = timeInSeconds;
+                if (timeInSeconds > userStats[name].max) userStats[name].max = timeInSeconds;
+            });
+
+            // Prepare data for the pie chart and statistics
+            const labels = [];
+            const counts = [];
+            const statsHtml = [];
+
+            Object.keys(userStats).forEach(user => {
+                const { count, min, max, total } = userStats[user];
+                const average = Math.floor(total / count);
+                labels.push(user);
+                counts.push(count);
+
+                statsHtml.push(`
+                    <h3>${user}</h3>
+                    <ul>
+                        <li>Hits: ${count}</li>
+                        <li>Min Time: ${formatTime(min)}</li>
+                        <li>Average Time: ${formatTime(average)}</li>
+                        <li>Max Time: ${formatTime(max)}</li>
+                    </ul>
+                `);
+            });
+
+            // Update statistics display
+            document.getElementById('statistics').innerHTML = statsHtml.join('');
+
+            // Destroy the previous chart if it exists
+            if (window.pieChartInstance) {
+                window.pieChartInstance.destroy();
+            }
+
+            // Create the Pie Chart
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            window.pieChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: ['#ff6f61', '#ff3d2e', '#ff5722', '#ff9800', '#ffeb3b'],
+                        borderColor: ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                },
+                datalabels: {
+                    formatter: (value, context) => {
+                        const total = counts.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(2);
+                        return `${percentage}%`;
+                    },
+                    color: '#ffffff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    }
+                }
+            });
+        }
+
+        function saveUserData(userName) {
+            let timerValue = document.getElementById('timer').textContent; // Get the current timer value
+            let currentTime = new Date().toLocaleString(); // Get the current time
+            let storedData = JSON.parse(sessionStorage.getItem('userData')) || [];
+
+            // Save the user name and current time in sessionStorage
+            storedData.push({ name: userName, time: timerValue, timestamp: currentTime });
+            sessionStorage.setItem('userData', JSON.stringify(storedData));
+
+            console.log(`User: ${userName}, Time: ${timerValue}, Saved at: ${currentTime}`);
+            startTimer();
+        }
+
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            let userNames = [];
+            params.forEach((value, key) => {
+                if (key.startsWith('user')) {
+                    userNames.push(value);
+                }
+            });
+            return userNames;
+        }
+
+        function displayUserNames(userNames) {
+            const gridDiv = document.querySelector('.grid');
+            if (userNames.length > 0) {
+                gridDiv.innerHTML = userNames.map((name) => `
+                    <div class="item" onclick="saveUserData('${name}')">${name}</div>
+                `).join('');
+            } else {
+                gridDiv.innerHTML = '<h2>Nessun utente specificato</h2>';
+            }
+        }
+    
+        // Format time from seconds to mm:ss
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            seconds = 0;
+            document.getElementById('timer').textContent = '00:00';
+
+            timer = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                document.getElementById('timer').textContent =
+                    (minutes < 10 ? '0' : '') + minutes + ':' + (secs < 10 ? '0' : '') + secs;
+            }, 1000);
+        }
+
+        // PDF Generation
+        document.getElementById('pdfButton').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const currentDate = new Date().toLocaleDateString();
+            doc.text(`Report Generated on: ${currentDate}`, 10, 10);
+
+            // Add statistics section
+            doc.text('Statistics [mm:ss]:', 10, 20);
+            const stats = document.getElementById('statistics');
+            doc.html(stats, {
+                callback: function (doc) {
+                    // Add pie chart
+                    const pieChartCanvas = document.getElementById('pieChart');
+                    const pieChartDataUrl = pieChartCanvas.toDataURL();
+                    doc.addImage(pieChartDataUrl, 'PNG', 10, doc.lastAutoTable.finalY + 10, 180, 100);
+
+                    doc.save('report.pdf');
+                },
+                x: 10,
+                y: 30
+            });
+        });
+
+        document.getElementById('pdfButton').addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const currentDate = new Date().toLocaleDateString();
+        
+        // Title Section
+        doc.setFontSize(16);
+        doc.text(`Group Focus Report`, 10, 10);
+        doc.setFontSize(12);
+        doc.text(`Report Generated on: ${currentDate}`, 10, 20);
+
+        // Add Pie Chart image at the top
+        const pieChartCanvas = document.getElementById('pieChart');
+        const pieChartDataUrl = pieChartCanvas.toDataURL();
+        doc.addImage(pieChartDataUrl, 'PNG', 10, 30, 100, 100); // Adjusted positioning and size
+        
+        // Add Statistics Section
+        doc.setFontSize(14);
+        doc.text('Statistics:', 10, 140);  // Start statistics section after pie chart
+        
+        // Add the statistics data
+        const stats = document.getElementById('statistics');
+        const statHtml = stats.innerHTML;
+        
+        // Format the statistics in a better way for the PDF
+        const formattedStats = formatStatisticsForPDF(statHtml);
+        doc.setFontSize(12);
+        doc.text(formattedStats, 10, 150);  // Start from position below pie chart
+
+        // Save the PDF
+        doc.save('report.pdf');
+    });
+
+    // Helper function to format statistics better for the PDF
+    function formatStatisticsForPDF(statHtml) {
+        // Convert the HTML to a more readable format (for example, stripping HTML tags)
+        const doc = new DOMParser().parseFromString(statHtml, 'text/html');
+        const stats = doc.body.getElementsByTagName('ul');
+        
+        let formattedStats = '';
+        for (let ul of stats) {
+            const userName = ul.previousElementSibling.innerText;
+            formattedStats += `${userName}:\n`;
+            for (let li of ul.getElementsByTagName('li')) {
+                formattedStats += `    - ${li.innerText}\n`;
+            }
+            formattedStats += '\n';
+        }
+        
+        return formattedStats;
+    }
+
+
+
+    
+        // Initialize page with query parameters and display user names
+        const userNames = getQueryParams();
+        displayUserNames(userNames);
+    
+        startTimer();
+
+        // Set up interval to update statistics and pie chart every 10 seconds
+        //setInterval(generateStatistics, 5000); // Update every 10 seconds
+    </script>
+    </body>
+</html>

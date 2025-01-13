@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic User Input</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #74ebd5, #acb6e5);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        input[type="number"], input[type="text"] {
+            margin: 10px 0;
+            padding: 10px;
+            width: 80%;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+        input[type="number"] {
+            width: 50%;
+        }
+        .input-field {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Welcome to the Session</h1>
+    <p>Please enter the number of users:</p>
+    <input type="number" id="userCount" placeholder="Number of Users" min="1" required>
+
+    <form id="userForm" style="margin-top: 20px;">
+        <!-- Dynamic input fields will be appended here -->
+    </form>
+    <button type="button" id="submitButton" onclick="submitForm()">Submit</button>
+</div>
+
+<script>
+    const userCountInput = document.getElementById('userCount');
+    const userForm = document.getElementById('userForm');
+
+    userCountInput.addEventListener('input', function() {
+        const userCount = this.value;
+        if (userCount === '' || userCount <= 0) return;
+
+        // Save current input values
+        const currentValues = Array.from(userForm.elements).map(input => input.value);
+        
+        // Clear previous inputs if user count decreases
+        userForm.innerHTML = '';
+        
+        for (let i = 1; i <= userCount; i++) {
+            const div = document.createElement('div');
+            div.className = 'input-field';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = `Enter name for user ${i}`;
+            input.required = true;
+
+            // Restore input values if they exist
+            if (currentValues[i - 1] !== undefined) {
+                input.value = currentValues[i - 1];
+            }
+            
+            div.appendChild(input);
+            userForm.appendChild(div);
+        }
+    });
+
+    function submitForm() {
+        const userNames = Array.from(userForm.elements)
+            .map(input => input.value.trim())
+            .filter(name => name !== '');
+        
+        if (userNames.length > 0) {
+            const queryString = userNames.map((name, index) => `user${index + 1}=${encodeURIComponent(name)}`).join('&');
+            window.location.href = `stopwatch.html?${queryString}`;
+        } else {
+            alert('Please enter at least one user name.');
+        }
+    }
+</script>
+
+</body>
+</html>
