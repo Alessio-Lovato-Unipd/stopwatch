@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Group Focus</title>
+    <title>Team Focus</title>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script> <!-- Include jsPDF -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@0.4.1/dist/html2canvas.min.js"></script> <!-- Include html2canvas -->
     <style>
@@ -11,19 +11,31 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             background: linear-gradient(to right, #ff7e5f, #feb47b);
-            padding: 20px;
+            padding: 0;
             margin: 0;
             font-family: 'Poppins', sans-serif;
             color: white;
-            text-align: center;
-            display: block;
+            display: flex;
             justify-content: center;
             align-items: center;
-            height: auto; /* Allow the page to scroll based on content */
             overflow-x: hidden; /* Prevent horizontal scroll */
-            overflow-y: auto;
+            overflow-y: scroll; /* Prevent vertical scroll */
+            -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        body::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: transparent;  /* Hide scrollbar thumb */
         }
 
         .container {
@@ -34,8 +46,11 @@
             text-align: center;
             width: 80%;
             max-width: 1200px;
-            margin: auto;
-            height: auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column; /* Ensure content stacks vertically */
+            align-items: center; /* Center the content inside */
         }
 
         #timer {
@@ -72,6 +87,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            min-width: 10vw;
 				
 			/* Dealing with 2 orphan items */
 			&:last-child:nth-child(3n - 1) {
@@ -95,7 +111,7 @@
         #scrollButton {
             margin-top: 20px;
             padding: 10px 20px;
-            background-color: #ff3d2e;
+            background-color: #797474;
             color: white;
             border: none;
             border-radius: 5px;
@@ -105,18 +121,23 @@
         }
 
         #scrollButton:hover {
-            background-color: #ff1f0f;
+            background-color: #5a5757;
         }
 
         #hiddenSection {
-            display: block;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            height: auto; /* Let the height adjust based on content */
-            background-color: #fef3c0;
-            padding: 50px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
             text-align: center;
-            margin-top: 30vh;
+            margin-top: 100vh;
         }
 
         /* Pie chart styling */
@@ -124,7 +145,6 @@
             max-width: 500px;
             margin: 40px auto;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         /* Statistics styling */
@@ -169,66 +189,157 @@
             background-color: #388e3c;
         }
 
+        .page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+            /* Overlay Styles */
+            #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.90);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+
+        #overlay h2 {
+            margin-bottom: 20px;
+        }
+
+        #overlay p {
+            margin-bottom: 20px;
+        }
+
+        #overlay b {
+            font-size: 1.5em;
+        }
+
+        #startButton {
+            padding: 15px 30px;
+            margin-left: 5vw;
+            background-color: #ff3d2e;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+
+        #startButton:hover {
+            background-color: #ff1f0f;
+        }
+
+        #coffeeBreakButton {
+            margin-top: 20px;
+            margin-right: 5vw;
+            padding: 10px 20px;
+            background-color: #ffeb3b; /* Yellow background */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s ease;
+        }
+
+        #coffeeBreakButton:hover {
+            background-color: #fdd835; /* Darker yellow on hover */
+        }
+
+        #coffeeBreakButton.active {
+            background-color: #4caf50; /* Green background when active */
+        }
 
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Group Focus</h1>
-        <div id="timer">00:00</div>
-        <div id="userNames" class="wrapper">
-            <div class="grid"></div>
+    <div class ="page" id="HomePage">
+        <div class="container">
+            <h1>Team Focus</h1>
+            <div id="timer">00:00</div>
+            <div id="userNames" class="wrapper">
+                <div class="grid"></div>
+            </div>
+            <div style="display: inline;">
+                <button id="coffeeBreakButton" onclick="toggleTimer()">Coffee Break</button>
+                <button id="scrollButton" onclick="ScrollStats()">Show Stats</button>
+            </div>
         </div>
-        <button id="scrollButton">Show More</button>
+    </div>
+    <div class="page" id="userStats">
+        <div id="hiddenSection">
+            <div>
+                <h2>Statistics and Pie Chart</h2>
+                <canvas id="pieChart"></canvas>
+                <div id="statistics"></div>
+                <button id="pdfButton">Download PDF Report</button>
+            </div>
+        </div>
     </div>
 
-    <div id="hiddenSection">
-        <h2>Statistics and Pie Chart</h2>
-        <canvas id="pieChart"></canvas>
-        <div id="statistics"></div>
-        <button id="pdfButton">Download PDF Report</button>
-    </div>
+        <!-- Overlay Instructions -->
+        <div id="overlay">
+            <h2>Welcome to Team Focus Session</h2>
+            <p><strong>1</strong> - The timer starts automatically</p>
+            <p><strong>2</strong> - Each time a person makes the team lose focus, click the button with their name</p>
+            <p><strong>3</strong> - At the end of the session, look at the statistics</p>
+            <p><strong>4</strong> - A report will be available</p>
+            <p><b>To exit full screen press F11 or keep Esc pressed</b></p>
+            <button id="startButton">START</button>
+        </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Reveal the hidden section by changing its display and opacity
-        function revealHiddenSection() {
-            const hiddenSection = document.getElementById('hiddenSection');
-            hiddenSection.style.display = 'block'; // Make the section visible
-            setTimeout(() => {
-                hiddenSection.style.opacity = 1; // Transition opacity to make it appear smoothly
-                // Generate statistics and chart after the section is revealed
-            }, 50);
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('HomePage').style.display = 'block';
+
+            // Request fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) { /* Firefox */
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) { /* IE/Edge */
+                document.documentElement.msRequestFullscreen();
+            }
+
+
+            // Center the content after fullscreen
+            document.body.style.display = 'flex';
+            document.getElementById('HomePage').style.display = 'flex';
+            document.body.style.justifyContent = 'center';
+            document.body.style.alignItems = 'center';
+            document.body.style.height = '100vh'; // Ensure the body takes up the full height of the screen
+
+            // Clear session storage
+            sessionStorage.removeItem('userData');
+            // Reset the timer
+            resetTimer();
+        });
+
+        function ScrollStats() {
+            generateStatistics();
+            window.scrollTo(0, document.body.scrollHeight);
         }
-    
-        // Handle button click to scroll to the hidden section
-        document.getElementById('scrollButton').addEventListener('click', () => {
-            revealHiddenSection();
-            document.getElementById('hiddenSection').scrollIntoView({ behavior: 'smooth' });
-        });
 
-        let hasScrolled = false; // Flag to track if the function has been triggered
-
-        // Handle scroll event to reveal the hidden section
-        window.addEventListener('scroll', () => {
-            const hiddenSection = document.getElementById('hiddenSection');
-            const rect = hiddenSection.getBoundingClientRect();
-            const viewHeight = window.innerHeight || document.documentElement.clientHeight;
-
-            // Check if the hidden section is in the viewport
-            if (rect.top < viewHeight && rect.bottom >= 0) {
-                revealHiddenSection();
-            }
-
-            // Call generateStatistics only the first time the scroll event is triggered
-            if (!hasScrolled) {
-                    generateStatistics();
-                    hasScrolled = true; // Set the flag to true after calling generateStatistics
-            }
-        });
-
-    
         // Function to generate statistics and pie chart
         function generateStatistics() {
             let storedData = JSON.parse(sessionStorage.getItem('userData')) || [];
@@ -328,7 +439,7 @@
             sessionStorage.setItem('userData', JSON.stringify(storedData));
 
             console.log(`User: ${userName}, Time: ${timerValue}, Saved at: ${currentTime}`);
-            startTimer();
+            resetTimer();
         }
 
         function getQueryParams() {
@@ -360,11 +471,14 @@
             return `${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
         }
 
-        function startTimer() {
+        function resetTimer() {
             clearInterval(timer);
             seconds = 0;
             document.getElementById('timer').textContent = '00:00';
+            startTimer();
+        }
 
+        function startTimer() {
             timer = setInterval(() => {
                 seconds++;
                 const minutes = Math.floor(seconds / 60);
@@ -376,36 +490,13 @@
 
         // PDF Generation
         document.getElementById('pdfButton').addEventListener('click', () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const currentDate = new Date().toLocaleDateString();
-            doc.text(`Report Generated on: ${currentDate}`, 10, 10);
-
-            // Add statistics section
-            doc.text('Statistics [mm:ss]:', 10, 20);
-            const stats = document.getElementById('statistics');
-            doc.html(stats, {
-                callback: function (doc) {
-                    // Add pie chart
-                    const pieChartCanvas = document.getElementById('pieChart');
-                    const pieChartDataUrl = pieChartCanvas.toDataURL();
-                    doc.addImage(pieChartDataUrl, 'PNG', 10, doc.lastAutoTable.finalY + 10, 180, 100);
-
-                    doc.save('report.pdf');
-                },
-                x: 10,
-                y: 30
-            });
-        });
-
-        document.getElementById('pdfButton').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const currentDate = new Date().toLocaleDateString();
         
         // Title Section
         doc.setFontSize(16);
-        doc.text(`Group Focus Report`, 10, 10);
+        doc.text(`Team Focus Report`, 10, 10);
         doc.setFontSize(12);
         doc.text(`Report Generated on: ${currentDate}`, 10, 20);
 
@@ -416,7 +507,7 @@
         
         // Add Statistics Section
         doc.setFontSize(14);
-        doc.text('Statistics:', 10, 140);  // Start statistics section after pie chart
+        doc.text('Statistics[mm:ss]:', 10, 140);  // Start statistics section after pie chart
         
         // Add the statistics data
         const stats = document.getElementById('statistics');
@@ -450,17 +541,41 @@
         return formattedStats;
     }
 
-
-
     
         // Initialize page with query parameters and display user names
         const userNames = getQueryParams();
+        
         displayUserNames(userNames);
     
-        startTimer();
-
         // Set up interval to update statistics and pie chart every 10 seconds
-        //setInterval(generateStatistics, 5000); // Update every 10 seconds
+        setInterval(generateStatistics, 5000); // Update every 10 seconds
+
+        let isTimerActive = true; // Flag to track the timer's state
+        let coffeeBreakClicked = false; // Flag to track Coffee Break state
+
+        function toggleTimer() {
+            const coffeeBreakButton = document.getElementById('coffeeBreakButton');
+            
+            if (coffeeBreakClicked) {
+                // If it's clicked again, resume the timer
+                startTimer();
+                coffeeBreakButton.classList.remove('active');
+                coffeeBreakButton.textContent = 'Coffee Break';
+                coffeeBreakButton.style.backgroundColor = '#d6ba14'; // Yellow background
+                document.getElementById('timer').style.color = '#ffffff';
+                
+                coffeeBreakClicked = false;
+            } else {
+                // If it's the first click, pause the timer
+                clearInterval(timer);
+                coffeeBreakButton.classList.add('active');
+                coffeeBreakButton.textContent = 'Start Again';
+                coffeeBreakButton.style.backgroundColor = '#4caf50'; // Green background
+                document.getElementById('timer').style.color = '#ffeb3b';
+                coffeeBreakClicked = true;
+            }
+        }
+
     </script>
     </body>
 </html>
